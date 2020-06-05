@@ -12,11 +12,18 @@
 
 
 import express, { request } from "express";
-
+import PointsController from './controllers/PointsController'
+import ItemsController from './controllers/ItemsController'
+// index = list, show = get one item, create, update, delete
 const routes = express.Router();
+const pointsController = new PointsController()
+const itemsController = new ItemsController()
 
-routes.get('/', (request, response) => { 
-    response.json({message: "Hello world"})
-})
+routes.get('/items', itemsController.index)
+
+routes.post('/points', pointsController.create)
+routes.get('/points/:id', pointsController.index)
+routes.get('/points', pointsController.show)
+
 
 export default routes;
