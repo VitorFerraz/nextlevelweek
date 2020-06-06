@@ -6,6 +6,7 @@ import { FiArrowLeft } from 'react-icons/fi'
 import { Map, TileLayer, Marker } from 'react-leaflet';
 import api from '../../services/api'
 import axios from 'axios'
+import { LeafletMouseEvent } from 'leaflet'
 interface Item { 
     id: number
     name: string
@@ -26,6 +27,8 @@ const CreatePoint = () => {
 
     const [selectedUf, setSelectedUf] = useState("0")
     const [selectedCity, setSelectedCity] = useState("0")
+    const [selectedPosition, setSelectedPosition] = useState<[number,number]>([0,0])
+    const [initialPosition, setInitialPosition] = useState<[number,number]>([0,0])
 
 
     useEffect(()=>{
@@ -37,7 +40,14 @@ const CreatePoint = () => {
     },[]);
 
     useEffect(()=>{
-        api.get<IBGEUFResponse[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados')
+       navigator.geolocation.getCurrentPosition(position => { 
+           const { latitude, longitude } = position.coords 
+            setInitialPosition([latitude, longitude])
+       })
+    },[]);
+
+    useEffect(()=>{
+        axios.get<IBGEUFResponse[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados')
         .then((response)=> { 
             const ufInitials = response.data.map(uf => uf.sigla)
             setUfs(ufInitials)
@@ -50,7 +60,7 @@ const CreatePoint = () => {
         if (selectedUf == '0') { 
             return
         }
-        api.get<IBGECityResponse[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUf}/municipios`)
+        axios.get<IBGECityResponse[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUf}/municipios`)
         .then((response)=> { 
             const cityNames = response.data.map(city => city.nome)
             setCities(cityNames)
@@ -67,6 +77,10 @@ const CreatePoint = () => {
     function handleSelectCity(event: ChangeEvent<HTMLSelectElement>) { 
         const city = event.target.value
         setSelectedCity(city)
+    }
+
+    function handleMapClick(event: LeafletMouseEvent) { 
+        setSelectedPosition([event.latlng.lat, event.latlng.lng])
     }
 
 
@@ -115,12 +129,12 @@ const CreatePoint = () => {
                         <span>Selecione o endereço no mapa</span>
                         
                     </legend>
-                    <Map center={[-23.5553977,-46.7381793]} zoom={15}>
+                    <Map center={initialPosition} zoom={15} onClick={handleMapClick}>
                         <TileLayer
                             attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                        <Marker position={[-23.5553977,-46.7381793]}/>
+                        <Marker position={selectedPosition}/>
                     </Map>
               
                     <div className="field-group">
