@@ -15,6 +15,7 @@ class PointsController {
                                 .where('uf', String(uf))
                                 .distinct()
                                 .select('points.*')
+        console.log(points)
         return response.json(points)
 
 
